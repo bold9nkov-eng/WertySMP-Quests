@@ -1,0 +1,18 @@
+
+name: WertySMP-Quests
+version: 1.0.0
+main: ru.wertysmp.quests.WertySMPQuests
+api-version: '1.21.11'
+depend:
+  - PlayerPoints
+
+commands:
+  wquests:
+    description: Открыть меню еженедельных квестов
+    usage: /wquests
+    aliases: [quests, квесты]
+
+permissions:
+  wertysmp.quests.use:
+    description: Позволяет открывать меню квестов
+    default: true
