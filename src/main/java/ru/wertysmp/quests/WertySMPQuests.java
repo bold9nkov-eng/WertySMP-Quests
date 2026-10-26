@@ -77,4 +77,60 @@ public final class WertySMPQuests extends JavaPlugin implements Listener {
  @EventHandler public void breakBlock(BlockBreakEvent e){Player p=e.getPlayer();Material m=e.getBlock().getType();String hand=p.getInventory().getItemInMainHand().getType().name();if(m.name().endsWith("_LOG"))inc(p,"logs",1);if(m==Material.ANCIENT_DEBRIS&&p.getWorld().getEnvironment()==World.Environment.NETHER&&hand.endsWith("PICKAXE"))inc(p,"debris",1);if(m.name().contains("IRON_ORE")||m.name().contains("COAL_ORE"))inc(p,"ores",1);if(m.name().contains("DIAMOND_ORE")&&hand.endsWith("PICKAXE"))inc(p,"diamonds",1);if(m==Material.RED_MUSHROOM||m==Material.BROWN_MUSHROOM)inc(p,"mushrooms",1);save();}
  @EventHandler public void fish(PlayerFishEvent e){if(e.getState()==PlayerFishEvent.State.CAUGHT_FISH&&e.getCaught() instanceof Item i){inc(e.getPlayer(),"fish",1);Material m=i.getItemStack().getType();if(m==Material.COD||m==Material.SALMON||m==Material.TROPICAL_FISH||m==Material.PUFFERFISH)save();}}
  @EventHandler public void death(EntityDeathEvent e){Player p=e.getEntity().getKiller();if(p==null)return;EntityType t=e.getEntityType();switch(t){case ZOMBIE->inc(p,"mobs",1);case SKELETON->{inc(p,"mobs",1);if(p.getInventory().getItemInMainHand().getType()==Material.BOW)inc(p,"bow",1);}case ENDER_DRAGON->inc(p,"dragon",1);case WARDEN->inc(p,"warden",1);case SHULKER->inc(p,"shulkers",1);case PHANTOM->inc(p,"phantoms",1);case CREEPER->inc(p,"creepers",1);case DROWNED->{if(p.getInventory().getItemInMainHand().getType()==Material.TRIDENT)inc(p,"drowned",1);}case ENDERMAN->{if(p.getWorld().getEnvironment()==World.Environment.THE_END&&p.getInventory().getHelmet().getType()!=Material.CARVED_PUMPKIN)inc(p,"endermen",1);}case COW,PIG,SHEEP->{if(p.getInventory().getItemInMainHand().getType().name().endsWith("_SWORD"))inc(p,"animals",1);}case WITHER->{if(p.getWorld().getEnvironment()==World.Environment.NETHER)inc(p,"wither",1);}default->{}}if(e.getEntity() instanceof Player victim){Set<String> s=pvp.computeIfAbsent(p.getUniqueId(),z->new HashSet<>());if(s.add(victim.getUniqueId().toString()))inc(p,"pvp",1);}save();}
+
+ @EventHandler public void collectItems(InventoryClickEvent e) {
+   if (!(e.getWhoClicked() instanceof Player p) || e.getView().getTitle().contains("Квесты")) return;
+   ItemStack item=e.getCurrentItem(); if(item==null||item.getType().isAir()) return;
+   // Count only real pickup/movement into the player's inventory, not clicks in quest GUI.
+   if(e.getClickedInventory()!=null && e.getClickedInventory().equals(p.getInventory()) &&
+      (e.getAction()==InventoryAction.PICKUP_ALL || e.getAction()==InventoryAction.PICKUP_HALF ||
+       e.getAction()==InventoryAction.PICKUP_ONE || e.getAction()==InventoryAction.PICKUP_SOME)) {
+      Material m=item.getType();
+      if(m==Material.ROTTEN_FLESH) inc(p,"loot",item.getAmount());
+      if(m==Material.SPIDER_EYE) inc(p,"loot",item.getAmount());
+      if(m==Material.RED_MUSHROOM||m==Material.BROWN_MUSHROOM) inc(p,"mushrooms",item.getAmount());
+      if(m==Material.WHEAT||m==Material.CARROT||m==Material.POTATO) inc(p,"crops",item.getAmount());
+      save();
+   }
+ }
+ @EventHandler public void craftQuest(CraftItemEvent e) {
+   if(!(e.getWhoClicked() instanceof Player p)) return;
+   Material m=e.getCurrentItem().getType();
+   if(m.name().startsWith("NETHERITE_") && (m.name().endsWith("_HELMET")||m.name().endsWith("_CHESTPLATE")||m.name().endsWith("_LEGGINGS")||m.name().endsWith("_BOOTS"))) inc(p,"netherite",1);
+   if(m==Material.IRON_SWORD||m==Material.IRON_AXE){Set<String> s=seen.computeIfAbsent(p.getUniqueId(),k->new HashSet<>());s.add(m.name());if(s.contains("IRON_SWORD")&&s.contains("IRON_AXE"))inc(p,"iron",2);}
+   if(m==Material.LEATHER_HELMET||m==Material.LEATHER_CHESTPLATE||m==Material.LEATHER_LEGGINGS||m==Material.LEATHER_BOOTS){Set<String>s=seen.computeIfAbsent(p.getUniqueId(),k->new HashSet<>());s.add(m.name());if(s.contains("LEATHER_HELMET")&&s.contains("LEATHER_CHESTPLATE")&&s.contains("LEATHER_LEGGINGS")&&s.contains("LEATHER_BOOTS"))inc(p,"leather",4);}
+   save();
+ }
+ @EventHandler public void brew(org.bukkit.event.inventory.BrewEvent e) {
+   for(HumanEntity h:e.getContents().getViewers()) if(h instanceof Player p) { inc(p,"potions",3); save(); }
+ }
+ @EventHandler public void chestOpen(InventoryOpenEvent e) {
+   if(!(e.getPlayer() instanceof Player p)) return;
+   InventoryHolder holder=e.getInventory().getHolder();
+   if(!(holder instanceof org.bukkit.loot.Lootable loot) || loot.getLootTable()==null) return;
+   if(!(holder instanceof org.bukkit.block.Container c)) return;
+   String k=c.getWorld().getName()+":"+c.getX()+":"+c.getY()+":"+c.getZ();
+   Set<String>s=seen.computeIfAbsent(p.getUniqueId(),z->new HashSet<>());
+   if(s.add("chest:"+k)){inc(p,"chests",1);save();}
+ }
+ @EventHandler public void furnace(org.bukkit.event.inventory.FurnaceExtractEvent e) {
+   Player p=e.getPlayer(); if(e.getItemType()==Material.GLASS) inc(p,"glass",e.getItemAmount());
+   if(e.getItemType()==Material.COOKED_PORKCHOP || e.getItemType()==Material.COOKED_CHICKEN) inc(p,"cooked",e.getItemAmount());
+   save();
+ }
+ @EventHandler public void harvest(BlockBreakEvent e) {
+   Material m=e.getBlock().getType();
+   if(m==Material.WHEAT && e.getBlock().getBlockData() instanceof org.bukkit.block.data.Ageable a && a.getAge()==a.getMaximumAge()) inc(e.getPlayer(),"crops",1);
+   if(m==Material.CARROTS || m==Material.POTATOES) inc(e.getPlayer(),"crops",1);
+   if(m==Material.SAND) inc(e.getPlayer(),"glass",1);
+ }
+ @EventHandler public void tame(org.bukkit.event.entity.EntityTameEvent e) {
+   if(!(e.getOwner() instanceof Player p)) return;
+   EntityType t=e.getEntityType(); if(t==EntityType.WOLF||t==EntityType.CAT||t==EntityType.PARROT) {
+     Set<String>s=seen.computeIfAbsent(p.getUniqueId(),z->new HashSet<>());s.add("pet:"+t.name());
+     if(s.contains("pet:WOLF")&&s.contains("pet:CAT")&&s.contains("pet:PARROT")) inc(p,"pets",3);
+     save();
+   }
+ }
+
 }
