@@ -78,20 +78,14 @@ public final class WertySMPQuests extends JavaPlugin implements Listener {
  @EventHandler public void fish(PlayerFishEvent e){if(e.getState()==PlayerFishEvent.State.CAUGHT_FISH&&e.getCaught() instanceof Item i){inc(e.getPlayer(),"fish",1);Material m=i.getItemStack().getType();if(m==Material.COD||m==Material.SALMON||m==Material.TROPICAL_FISH||m==Material.PUFFERFISH)save();}}
  @EventHandler public void death(EntityDeathEvent e){Player p=e.getEntity().getKiller();if(p==null)return;EntityType t=e.getEntityType();switch(t){case ZOMBIE->inc(p,"mobs",1);case SKELETON->{inc(p,"mobs",1);if(p.getInventory().getItemInMainHand().getType()==Material.BOW)inc(p,"bow",1);}case ENDER_DRAGON->inc(p,"dragon",1);case WARDEN->inc(p,"warden",1);case SHULKER->inc(p,"shulkers",1);case PHANTOM->inc(p,"phantoms",1);case CREEPER->inc(p,"creepers",1);case DROWNED->{if(p.getInventory().getItemInMainHand().getType()==Material.TRIDENT)inc(p,"drowned",1);}case ENDERMAN->{if(p.getWorld().getEnvironment()==World.Environment.THE_END&&p.getInventory().getHelmet().getType()!=Material.CARVED_PUMPKIN)inc(p,"endermen",1);}case COW,PIG,SHEEP->{if(p.getInventory().getItemInMainHand().getType().name().endsWith("_SWORD"))inc(p,"animals",1);}case WITHER->{if(p.getWorld().getEnvironment()==World.Environment.NETHER)inc(p,"wither",1);}default->{}}if(e.getEntity() instanceof Player victim){Set<String> s=pvp.computeIfAbsent(p.getUniqueId(),z->new HashSet<>());if(s.add(victim.getUniqueId().toString()))inc(p,"pvp",1);}save();}
 
- @EventHandler public void collectItems(InventoryClickEvent e) {
-   if (!(e.getWhoClicked() instanceof Player p) || e.getView().getTitle().contains("Квесты")) return;
-   ItemStack item=e.getCurrentItem(); if(item==null||item.getType().isAir()) return;
-   // Count only real pickup/movement into the player's inventory, not clicks in quest GUI.
-   if(e.getClickedInventory()!=null && e.getClickedInventory().equals(p.getInventory()) &&
-      (e.getAction()==InventoryAction.PICKUP_ALL || e.getAction()==InventoryAction.PICKUP_HALF ||
-       e.getAction()==InventoryAction.PICKUP_ONE || e.getAction()==InventoryAction.PICKUP_SOME)) {
-      Material m=item.getType();
-      if(m==Material.ROTTEN_FLESH) inc(p,"loot",item.getAmount());
-      if(m==Material.SPIDER_EYE) inc(p,"loot",item.getAmount());
-      if(m==Material.RED_MUSHROOM||m==Material.BROWN_MUSHROOM) inc(p,"mushrooms",item.getAmount());
-      if(m==Material.WHEAT||m==Material.CARROT||m==Material.POTATO) inc(p,"crops",item.getAmount());
-      save();
-   }
+ @EventHandler public void collectItems(org.bukkit.event.entity.EntityPickupItemEvent e) {
+   if(!(e.getEntity() instanceof Player p)) return;
+   ItemStack item=e.getItem().getItemStack(); Material m=item.getType();
+   if(m==Material.ROTTEN_FLESH) inc(p,"loot",item.getAmount());
+   if(m==Material.SPIDER_EYE) inc(p,"loot",item.getAmount());
+   if(m==Material.RED_MUSHROOM||m==Material.BROWN_MUSHROOM) inc(p,"mushrooms",item.getAmount());
+   if(m==Material.WHEAT||m==Material.CARROT||m==Material.POTATO) inc(p,"crops",item.getAmount());
+   save();
  }
  @EventHandler public void craftQuest(CraftItemEvent e) {
    if(!(e.getWhoClicked() instanceof Player p)) return;
@@ -126,7 +120,7 @@ public final class WertySMPQuests extends JavaPlugin implements Listener {
  }
  @EventHandler public void tame(org.bukkit.event.entity.EntityTameEvent e) {
    if(!(e.getOwner() instanceof Player p)) return;
-   EntityType t=e.getEntityType(); if(t==EntityType.WOLF||t==EntityType.CAT||t==EntityType.PARROT) {
+   EntityType t=e.getEntity().getType(); if(t==EntityType.WOLF||t==EntityType.CAT||t==EntityType.PARROT) {
      Set<String>s=seen.computeIfAbsent(p.getUniqueId(),z->new HashSet<>());s.add("pet:"+t.name());
      if(s.contains("pet:WOLF")&&s.contains("pet:CAT")&&s.contains("pet:PARROT")) inc(p,"pets",3);
      save();
