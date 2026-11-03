@@ -1,0 +1,17 @@
+name: VoidClear
+version: 1.0.2
+main: ru.voidmain.voidclear.VoidClear
+api-version: '1.21'
+authors: [NeZoX]
+description: Safe item cleanup and fair hostile mob cluster optimization.
+folia-supported: false
+commands:
+  voidclear:
+    description: Управление безопасной очисткой VoidClear
+    usage: /voidclear help
+    aliases: [vc, vclear]
+    permission: voidclear.admin
+permissions:
+  voidclear.admin:
+    description: Полный доступ к командам VoidClear
+    default: op
