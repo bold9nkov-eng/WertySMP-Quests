@@ -1,0 +1,49 @@
+settings:
+  broadcast-results: false
+
+auto-clear:
+  enabled: true
+  interval-seconds: 600
+  warning-seconds: [60, 30, 10]
+  clear-items: true
+  clear-mobs: true
+
+items:
+  enabled: true
+  minimum-age-seconds: 180
+  protect-death-drops: true
+  death-drop-protection-seconds: 1800
+  prevent-natural-despawn: true
+  protect-named-items: true
+  protect-enchanted-items: true
+  whitelist:
+    - DIAMOND
+    - DIAMOND_BLOCK
+    - EMERALD
+    - EMERALD_BLOCK
+    - NETHERITE_INGOT
+    - NETHERITE_SCRAP
+    - NETHERITE_BLOCK
+    - ANCIENT_DEBRIS
+    - BEACON
+    - ELYTRA
+    - TOTEM_OF_UNDYING
+  ignored-worlds: []
+
+mobs:
+  enabled: true
+  threshold: 15
+  cluster-radius: 12.0
+  remove-percent: 40
+  min-remaining: 10
+  player-protection-radius: 28.0
+  minimum-age-seconds: 120
+  recent-damage-protection-seconds: 30
+  skip-named-mobs: true
+  skip-non-despawning-mobs: true
+  skip-targeting-mobs: true
+  ignored-worlds: []
+
+messages:
+  warning: "Очистка через &#C084FC%seconds% сек."
+  auto-result: "Очистка завершена. Предметов: &#C084FC%items%&#FFFFFF, мобов: &#C084FC%mobs%."
