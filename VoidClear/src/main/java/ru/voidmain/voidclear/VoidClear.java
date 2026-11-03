@@ -182,6 +182,49 @@ public final class VoidClear extends JavaPlugin implements Listener, CommandExec
         }
     }
 
+    /*
+     * Manual administrator clear intentionally bypasses ALL automatic-cleanup protections.
+     * It is local to the command executor's world and configured radius. Console runs globally
+     * across currently loaded worlds because it has no player location.
+     */
+    private double manualRadius() {
+        return Math.max(1.0, getConfig().getDouble("manual-clear.radius", 32.0));
+    }
+
+    private int manualClearItems(CommandSender sender) {
+        int removed = 0;
+        double radiusSquared = manualRadius() * manualRadius();
+        Player executor = sender instanceof Player player ? player : null;
+
+        for (World world : Bukkit.getWorlds()) {
+            if (executor != null && !world.equals(executor.getWorld())) continue;
+            for (Item item : world.getEntitiesByClass(Item.class)) {
+                if (!item.isValid() || item.isDead()) continue;
+                if (executor != null && item.getLocation().distanceSquared(executor.getLocation()) > radiusSquared) continue;
+                item.remove(); // bypasses death protection, whitelist, age, custom name and enchantments
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    private int manualClearMobs(CommandSender sender) {
+        int removed = 0;
+        double radiusSquared = manualRadius() * manualRadius();
+        Player executor = sender instanceof Player player ? player : null;
+
+        for (World world : Bukkit.getWorlds()) {
+            if (executor != null && !world.equals(executor.getWorld())) continue;
+            for (Monster mob : world.getEntitiesByClass(Monster.class)) {
+                if (!mob.isValid() || mob.isDead()) continue;
+                if (executor != null && mob.getLocation().distanceSquared(executor.getLocation()) > radiusSquared) continue;
+                mob.remove(); // bypasses cluster threshold, player proximity, target, name, age and mob protections
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     private int clearItems(boolean force) {
         if (!getConfig().getBoolean("items.enabled", true)) return 0;
         int removed = 0;
