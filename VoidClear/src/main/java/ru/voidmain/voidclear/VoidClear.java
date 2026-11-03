@@ -57,7 +57,7 @@ public final class VoidClear extends JavaPlugin implements Listener, CommandExec
         restoreLoadedDeathDrops();
         resetTimer();
         timerTask = Bukkit.getScheduler().runTaskTimer(this, this::tick, 20L, 20L);
-        getLogger().info("VoidClear 1.0.2 enabled. Paper API 1.21.11; no ads or telemetry.");
+        getLogger().info("VoidClear 1.0.3 enabled. Paper API 1.21.11; no ads or telemetry.");
     }
 
     @Override
@@ -379,17 +379,33 @@ public final class VoidClear extends JavaPlugin implements Listener, CommandExec
             return true;
         }
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            msg(sender, "Команды: &#C084FCclear items|mobs|all [force]&#FFFFFF, &#C084FCstatus&#FFFFFF, &#C084FCscan&#FFFFFF, &#C084FCpause&#FFFFFF, &#C084FCresume&#FFFFFF, &#C084FCreload");
+            msg(sender, "Команды: &#C084FCclear items|mobs|all&#FFFFFF, &#C084FCstatus&#FFFFFF, &#C084FCscan&#FFFFFF, &#C084FCpause&#FFFFFF, &#C084FCresume&#FFFFFF, &#C084FCreload");
             return true;
         }
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "clear" -> {
-                if (args.length < 2) { msg(sender, "Использование: /voidclear clear items|mobs|all [force]"); return true; }
-                boolean force = args.length >= 3 && args[2].equalsIgnoreCase("force");
+                if (args.length < 2) {
+                    msg(sender, "Использование: /voidclear clear items|mobs|all");
+                    return true;
+                }
                 String kind = args[1].toLowerCase(Locale.ROOT);
-                if (kind.equals("items") || kind.equals("all")) msg(sender, "Удалено предметов: &#C084FC" + clearItems(force));
-                if (kind.equals("mobs") || kind.equals("all")) msg(sender, "Удалено мобов: &#C084FC" + clearMobClusters(force));
-                if (!kind.equals("items") && !kind.equals("mobs") && !kind.equals("all")) msg(sender, "Неизвестный тип очистки.");
+                String scope = sender instanceof Player
+                        ? "радиус " + (int) manualRadius() + " блоков вокруг тебя"
+                        : "все загруженные миры";
+                if (kind.equals("items")) {
+                    int count = manualClearItems(sender);
+                    msg(sender, "Удалено предметов: &#C084FC" + count + "&#FFFFFF. Защиты предметов не применялись. Область: " + scope);
+                } else if (kind.equals("mobs")) {
+                    int count = manualClearMobs(sender);
+                    msg(sender, "Удалено мобов: &#C084FC" + count + "&#FFFFFF. Защиты мобов не применялись. Область: " + scope);
+                } else if (kind.equals("all")) {
+                    int itemCount = manualClearItems(sender);
+                    int mobCount = manualClearMobs(sender);
+                    msg(sender, "Очистка завершена. Предметов: &#C084FC" + itemCount
+                            + "&#FFFFFF, мобов: &#C084FC" + mobCount + "&#FFFFFF. Все защиты отключены. Область: " + scope);
+                } else {
+                    msg(sender, "Неизвестный тип. Используй items, mobs или all.");
+                }
             }
             case "status" -> {
                 msg(sender, "Автоочистка: " + (getConfig().getBoolean("auto-clear.enabled", true) && !paused ? "&#A78BFAработает" : "&#F3E8FFпауза/отключена"));
@@ -413,7 +429,6 @@ public final class VoidClear extends JavaPlugin implements Listener, CommandExec
         if (!sender.hasPermission("voidclear.admin")) return Collections.emptyList();
         if (args.length == 1) return filter(List.of("help", "clear", "status", "scan", "pause", "resume", "reload"), args[0]);
         if (args.length == 2 && args[0].equalsIgnoreCase("clear")) return filter(List.of("items", "mobs", "all"), args[1]);
-        if (args.length == 3 && args[0].equalsIgnoreCase("clear")) return filter(List.of("force"), args[2]);
         return Collections.emptyList();
     }
 
