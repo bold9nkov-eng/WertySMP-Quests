@@ -1,0 +1,30 @@
+name: Build VoidClear 1.0.2
+
+on:
+  push:
+    branches:
+      - voidclear-rebuild-1.0.2
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build against official Paper 1.21.11 API
+        run: mvn --batch-mode -f VoidClear/pom.xml clean package
+      - name: Upload plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoidClear-1.0.2
+          path: VoidClear/target/VoidClear-1.0.2.jar
+          if-no-files-found: error
